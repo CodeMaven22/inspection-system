@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { Inspection, InspectionStatus, InspectionType } from "@/types/inspection"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/context/auth-context"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 

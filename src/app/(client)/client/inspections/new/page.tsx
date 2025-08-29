@@ -24,7 +24,7 @@ import type {
   FirstAidChecklistData,
   FirstAidChecklistItem,
 } from "@/types/inspection"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/context/auth-context"
 
 export default function ClientNewInspectionPage() {
   const router = useRouter()

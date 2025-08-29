@@ -2,8 +2,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, LineChart, Users, ClipboardCheck } from "lucide-react"
+import { useRoleGuard } from "@/hooks/useRoleGuard"
 
 export default function AdminDashboardPage() {
+  useRoleGuard(["admin"]) // Only admin can access
+
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold tracking-tight text-green-700">Admin Dashboard</h1>
