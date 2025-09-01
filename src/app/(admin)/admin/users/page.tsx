@@ -353,7 +353,7 @@ export default function WorkersPage() {
             <TableHeader>
               <TableRow className="bg-gray-100 hover:bg-gray-100">
                 <TableHead className="font-semibold text-gray-700">Name</TableHead>
-                <TableHead className="font-semibold text-gray-700">Email</TableHead>
+                <TableHead className="font-semibold text-gray-700 ">Email</TableHead>
                 <TableHead className="font-semibold text-gray-700">Role</TableHead>
                 <TableHead className="text-right font-semibold text-gray-700">Actions</TableHead>
               </TableRow>

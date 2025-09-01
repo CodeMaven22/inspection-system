@@ -226,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (credentials: LoginCredentials) => {
       setIsLoading(true)
       try {
-        const response = await api.post("/core/login/", credentials)
+        const response = await api.post("/core/token/", credentials)
         const data = response.data
 
         setUser(data.user)
