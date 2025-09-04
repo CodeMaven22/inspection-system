@@ -264,11 +264,11 @@ export function AppSidebar({ isMobileOpen = false, onMobileClose }: AppSidebarPr
                       <span>Medication Comprehensive</span>
                     </Link>
                     <Link
-                      href="/client/inspections/medication-weekly"
+                      href="/client/inspections/weekly-medication"
                       onClick={onMobileClose}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        pathname === "/client/inspections/medication-weekly"
+                        pathname === "/client/inspections/weekly-medication"
                           ? "text-white"
                           : "text-green-200 hover:text-white"
                       )}
@@ -420,11 +420,11 @@ export function AppSidebar({ isMobileOpen = false, onMobileClose }: AppSidebarPr
                       <span>Medication Comprehensive</span>
                     </Link>
                     <Link
-                      href="/admin/inspections/medication-weekly"
+                      href="/admin/inspections/weekly-medication"
                       onClick={onMobileClose}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        pathname === "/admin/inspections/medication-weekly"
+                        pathname === "/admin/inspections/weekly-medication"
                           ? "text-white"
                           : "text-green-200 hover:text-white"
                       )}

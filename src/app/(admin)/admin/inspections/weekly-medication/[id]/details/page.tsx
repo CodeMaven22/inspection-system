@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card"
 import {
   ArrowLeft,
-  Eye,
   CheckCircle2,
   XCircle,
   Calendar,
@@ -20,13 +19,13 @@ import {
   Building,
   FileText,
   AlertCircle,
+  Pill,
   Shield,
-  Flame,
-  Heart,
-  Zap,
-  Settings,
   Check,
   X,
+  Edit,
+  BadgeCheck,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -36,7 +35,7 @@ import { toast } from "sonner"
 import api from "@/lib/api-client"
 import { Badge } from "@/components/ui/badge"
 
-interface HealthSafetyInspection {
+interface WeeklyMedicationInspection {
   id: number
   inspection: {
     id: number
@@ -56,34 +55,37 @@ interface HealthSafetyInspection {
     approval_date: string | null
     created_at: string
   }
-  previous_concerns_addressed: boolean
-  policy_up_to_date_local_health_safety: boolean
-  staff_issued_personal_copy_policy_told_text: boolean
-  health_safety_standing_item_agenda_previous_staff_meeting: boolean
-  all_staff_received_training_health_safety_procedures: boolean
-  new_staff_receive_training_beginning_employment: boolean
-  temporary_staff_receive_necessary_training: boolean
-  staff_carry_out_manual_handling_risk_assessment: boolean
-  equipment_used_mobility_risk_assessment: boolean
-  computer_workstation_assessments_carried_out_recorded: boolean
-  working_conditions_suitable_noise_lighting_ventilation_temperature: boolean
-  furniture_furnishings_good_condition_suitable_stable: boolean
-  equipment_suitable_maintained_good_condition: boolean
-  floor_surfaces_acceptable_condition: boolean
-  fire_doors_kept_closed: boolean
-  notices_informing_staff_what_to_do_fire: boolean
-  staff_know_what_to_do_event_fire: boolean
-  adequate_first_aiders_available: boolean
-  easy_to_find_first_aiders: boolean
-  electricity_obvious_defects_electrical_equipment: boolean
-  sockets_overloaded: boolean
-  all_electrical_equipment_inspected: boolean
-  circulation_routes_kept_clear_obstructions_wires_cables_boxes: boolean
-  harmful_substances_in_use_precautions_agreed: string
+  // Medication Storage Section
+  medications_cabinet_securely_locked: boolean
+  medication_cabinet_clean_no_spillages: boolean
+  medications_have_opening_dates_original_labels: boolean
+  medication_label_has_client_details: boolean
+  medication_stored_correctly: boolean
+  // Documentation Section
+  current_marr_sheet_match_client_records: boolean
+  marr_sheet_list_all_medications_prescribed: boolean
+  gap_on_marr_sheet: boolean
+  boxed_bottled_medications_stock_count_entered: boolean
+  all_documentation_black_ink: boolean
+  // Controlled Drugs Section
+  control_drug_for_client: boolean
+  controlled_drugs_stored_recorded_correctly_count_correct: boolean
+  // PRN Medications Section
+  prn_medications: boolean
+  directives_for_prn_clear_comprehensive: boolean
+  // Medication Administration Section
+  medication_count_accurate: boolean
+  medication_expiry_checked: boolean
+  // Free Text Fields
+  missing_administration_why: string
+  any_issues: string
   comments: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
-export default function HealthSafetyInspectionDetailsPage() {
+export default function WeeklyMedicationAuditDetailsPage() {
   useRoleGuard(["admin", "team_leader", "inspector"])
   
   const router = useRouter()
@@ -91,7 +93,7 @@ export default function HealthSafetyInspectionDetailsPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [inspection, setInspection] = useState<HealthSafetyInspection | null>(null)
+  const [inspection, setInspection] = useState<WeeklyMedicationInspection | null>(null)
 
   useEffect(() => {
     const fetchInspection = async () => {
@@ -99,13 +101,13 @@ export default function HealthSafetyInspectionDetailsPage() {
         setLoading(true)
         setError(null)
         
-        const response = await api.get(`/inspections/health-safety/${params.id}/`)
+        const response = await api.get(`/inspections/weekly-medication-audit/${params.id}/`)
         setInspection(response.data)
       } catch (err: any) {
         console.error("Failed to fetch inspection:", err)
         const errorMessage = err.response?.data?.detail || 
                            err.response?.data?.message || 
-                           "Failed to load health & safety inspection. Please try again."
+                           "Failed to load weekly medication audit. Please try again."
         setError(errorMessage)
         toast.error(errorMessage)
       } finally {
@@ -121,13 +123,13 @@ export default function HealthSafetyInspectionDetailsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge className="bg-yellow-400 text-white">Pending</Badge>
+        return <Badge className="bg-yellow-400 text-white flex items-center w-min gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Pending</Badge>
       case "approved":
-        return <Badge className="bg-emerald-600 text-white">Approved</Badge>
+        return <Badge className="bg-emerald-600 text-white flex items-center w-min gap-1"><BadgeCheck className="h-3 w-3" /> Approved</Badge>
       case "rejected":
-        return <Badge className="bg-red-500 text-white">Rejected</Badge>
+        return <Badge className="bg-red-500 text-white flex items-center w-min gap-1"><X className="h-3 w-3" /> Rejected</Badge>
       case "completed":
-        return <Badge variant="outline">Completed</Badge>
+        return <Badge variant="outline" className="flex items-center w-min gap-1"><CheckCircle2 className="h-3 w-3" /> Completed</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -148,8 +150,8 @@ export default function HealthSafetyInspectionDetailsPage() {
     return (
       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
-          <p className="text-muted-foreground">Loading health & safety inspection...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+          <p className="text-muted-foreground">Loading weekly medication audit details...</p>
         </div>
       </div>
     )
@@ -160,11 +162,11 @@ export default function HealthSafetyInspectionDetailsPage() {
       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Inspection</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Audit</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="flex gap-3 justify-center">
             <Button asChild variant="default" className="bg-emerald-600 hover:bg-emerald-700">
-              <Link href="/admin/inspections/health-safety">Back to Inspections</Link>
+              <Link href="/admin/inspections/weekly-medication-audit">Back to Audits</Link>
             </Button>
           </div>
         </div>
@@ -177,10 +179,10 @@ export default function HealthSafetyInspectionDetailsPage() {
       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Inspection Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested health & safety inspection could not be found.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Audit Not Found</h2>
+          <p className="text-gray-600 mb-4">The requested weekly medication audit could not be found.</p>
           <Button asChild variant="default" className="bg-emerald-600 hover:bg-emerald-700">
-            <Link href="/admin/inspections/health-safety">Back to Inspections</Link>
+            <Link href="/admin/inspections/weekly-medication-audit">Back to Audits</Link>
           </Button>
         </div>
       </div>
@@ -191,25 +193,25 @@ export default function HealthSafetyInspectionDetailsPage() {
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
-          <Link href="/admin/inspections/health-safety">
+          <Link href="/admin/inspections/weekly-medication-audit">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-emerald-800">Health & Safety Inspection Details</h1>
-          <p className="text-muted-foreground">View details of inspection #{inspection.id}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-emerald-800">Weekly Medication Audit Details</h1>
+          <p className="text-muted-foreground">View details of audit #{inspection.id}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Basic Information */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 border-emerald-100">
           <CardHeader>
             <CardTitle className="text-emerald-800 flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Basic Information
             </CardTitle>
-            <CardDescription>Inspection overview and metadata</CardDescription>
+            <CardDescription>Audit overview and metadata</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -259,6 +261,18 @@ export default function HealthSafetyInspectionDetailsPage() {
               </div>
             </div>
 
+            {inspection.inspection?.inspection_date && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Inspection Date
+                </Label>
+                <div className="text-sm p-2 bg-muted rounded-md">
+                  {new Date(inspection.inspection.inspection_date).toLocaleDateString()}
+                </div>
+              </div>
+            )}
+
             {inspection.inspection?.approved_by_name && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
@@ -294,225 +308,173 @@ export default function HealthSafetyInspectionDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Policy and Training Section */}
-        <Card className="lg:col-span-2">
+        {/* Medication Storage Section */}
+        <Card className="lg:col-span-2 border-emerald-100">
           <CardHeader>
             <CardTitle className="text-emerald-800 flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Policy and Training
+              <Pill className="h-5 w-5" />
+              Medication Storage
             </CardTitle>
-            <CardDescription>Policy documentation and staff training status</CardDescription>
+            <CardDescription>Medication cabinet and storage conditions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">Previous concerns addressed</Label>
-                <BooleanIndicator value={inspection.previous_concerns_addressed} />
+                <Label className="text-sm">Cabinet securely locked</Label>
+                <BooleanIndicator value={inspection.medications_cabinet_securely_locked} />
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">Policy up to date</Label>
-                <BooleanIndicator value={inspection.policy_up_to_date_local_health_safety} />
+                <Label className="text-sm">Cabinet clean, no spillages</Label>
+                <BooleanIndicator value={inspection.medication_cabinet_clean_no_spillages} />
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">Staff issued policy copies</Label>
-                <BooleanIndicator value={inspection.staff_issued_personal_copy_policy_told_text} />
+                <Label className="text-sm">Opening dates & original labels</Label>
+                <BooleanIndicator value={inspection.medications_have_opening_dates_original_labels} />
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">H&S on meeting agenda</Label>
-                <BooleanIndicator value={inspection.health_safety_standing_item_agenda_previous_staff_meeting} />
+                <Label className="text-sm">Labels have client details</Label>
+                <BooleanIndicator value={inspection.medication_label_has_client_details} />
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">All staff trained</Label>
-                <BooleanIndicator value={inspection.all_staff_received_training_health_safety_procedures} />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">New staff trained</Label>
-                <BooleanIndicator value={inspection.new_staff_receive_training_beginning_employment} />
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <Label className="text-sm">Temporary staff trained</Label>
-                <BooleanIndicator value={inspection.temporary_staff_receive_necessary_training} />
+                <Label className="text-sm">Medications stored correctly</Label>
+                <BooleanIndicator value={inspection.medication_stored_correctly} />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Risk Assessments Section */}
-      <Card>
+      {/* Documentation Section */}
+      <Card className="border-emerald-100">
         <CardHeader>
           <CardTitle className="text-emerald-800 flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Risk Assessments
+            <FileText className="h-5 w-5" />
+            Documentation
           </CardTitle>
-          <CardDescription>Risk assessment procedures and documentation</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Manual handling assessments</Label>
-              <BooleanIndicator value={inspection.staff_carry_out_manual_handling_risk_assessment} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Mobility equipment assessments</Label>
-              <BooleanIndicator value={inspection.equipment_used_mobility_risk_assessment} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Workstation assessments</Label>
-              <BooleanIndicator value={inspection.computer_workstation_assessments_carried_out_recorded} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Physical Environment Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-emerald-800 flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            Physical Environment
-          </CardTitle>
-          <CardDescription>Workplace conditions and equipment status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Suitable working conditions</Label>
-              <BooleanIndicator value={inspection.working_conditions_suitable_noise_lighting_ventilation_temperature} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Furniture in good condition</Label>
-              <BooleanIndicator value={inspection.furniture_furnishings_good_condition_suitable_stable} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Equipment maintained</Label>
-              <BooleanIndicator value={inspection.equipment_suitable_maintained_good_condition} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Floor surfaces acceptable</Label>
-              <BooleanIndicator value={inspection.floor_surfaces_acceptable_condition} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Fire Safety Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-emerald-800 flex items-center gap-2">
-            <Flame className="h-5 w-5" />
-            Fire Safety
-          </CardTitle>
-          <CardDescription>Fire safety procedures and equipment status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Fire doors closed</Label>
-              <BooleanIndicator value={inspection.fire_doors_kept_closed} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Fire procedure notices</Label>
-              <BooleanIndicator value={inspection.notices_informing_staff_what_to_do_fire} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Staff know fire procedures</Label>
-              <BooleanIndicator value={inspection.staff_know_what_to_do_event_fire} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* First Aid Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-emerald-800 flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            First Aid
-          </CardTitle>
-          <CardDescription>First aid provisions and personnel status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Adequate first aiders</Label>
-              <BooleanIndicator value={inspection.adequate_first_aiders_available} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">First aiders easy to find</Label>
-              <BooleanIndicator value={inspection.easy_to_find_first_aiders} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Electrical Safety Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-emerald-800 flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Electrical Safety
-          </CardTitle>
-          <CardDescription>Electrical equipment and safety status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">No electrical defects</Label>
-              <BooleanIndicator value={inspection.electricity_obvious_defects_electrical_equipment} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">Sockets not overloaded</Label>
-              <BooleanIndicator value={inspection.sockets_overloaded} />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <Label className="text-sm">All equipment inspected</Label>
-              <BooleanIndicator value={inspection.all_electrical_equipment_inspected} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* General Safety Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-emerald-800">General Safety</CardTitle>
-          <CardDescription>Additional safety information and comments</CardDescription>
+          <CardDescription>MARR sheet and documentation review</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <Label className="text-sm">Circulation routes clear</Label>
-            <BooleanIndicator value={inspection.circulation_routes_kept_clear_obstructions_wires_cables_boxes} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">MARR sheet matches records</Label>
+              <BooleanIndicator value={inspection.current_marr_sheet_match_client_records} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">All medications listed</Label>
+              <BooleanIndicator value={inspection.marr_sheet_list_all_medications_prescribed} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Gaps in MARR sheet</Label>
+              <BooleanIndicator value={inspection.gap_on_marr_sheet} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Stock count entered</Label>
+              <BooleanIndicator value={inspection.boxed_bottled_medications_stock_count_entered} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Documentation in black ink</Label>
+              <BooleanIndicator value={inspection.all_documentation_black_ink} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Controlled Drugs & PRN Medications */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border-emerald-100">
+          <CardHeader>
+            <CardTitle className="text-emerald-800 flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Controlled Drugs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Controlled drugs present</Label>
+              <BooleanIndicator value={inspection.control_drug_for_client} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Controlled drugs properly managed</Label>
+              <BooleanIndicator value={inspection.controlled_drugs_stored_recorded_correctly_count_correct} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-100">
+          <CardHeader>
+            <CardTitle className="text-emerald-800">PRN Medications</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">PRN medications present</Label>
+              <BooleanIndicator value={inspection.prn_medications} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Clear PRN directives</Label>
+              <BooleanIndicator value={inspection.directives_for_prn_clear_comprehensive} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Medication Administration Section */}
+      <Card className="border-emerald-100">
+        <CardHeader>
+          <CardTitle className="text-emerald-800">Medication Administration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Medication count accurate</Label>
+              <BooleanIndicator value={inspection.medication_count_accurate} />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <Label className="text-sm">Medication expiry checked</Label>
+              <BooleanIndicator value={inspection.medication_expiry_checked} />
+            </div>
           </div>
 
-          {inspection.harmful_substances_in_use_precautions_agreed && (
+          {inspection.missing_administration_why && (
             <div className="space-y-2">
-              <Label>Harmful Substances & Precautions</Label>
+              <Label>Missing Administration Reason</Label>
               <div className="text-sm p-3 bg-muted/30 rounded-lg">
-                {inspection.harmful_substances_in_use_precautions_agreed}
+                {inspection.missing_administration_why}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Audit Findings */}
+      <Card className="border-emerald-100">
+        <CardHeader>
+          <CardTitle className="text-emerald-800">Audit Findings</CardTitle>
+          <CardDescription>Additional comments and issues</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {inspection.any_issues && (
+            <div className="space-y-2">
+              <Label>Issues Identified</Label>
+              <div className="text-sm p-3 bg-muted/30 rounded-lg">
+                {inspection.any_issues}
               </div>
             </div>
           )}
 
           {inspection.comments && (
             <div className="space-y-2">
-              <Label>Additional Comments</Label>
+              <Label>General Comments</Label>
               <div className="text-sm p-3 bg-muted/30 rounded-lg">
                 {inspection.comments}
               </div>
@@ -532,13 +494,14 @@ export default function HealthSafetyInspectionDetailsPage() {
 
       <div className="flex justify-end gap-4">
         <Button asChild variant="outline">
-          <Link href="/admin/inspections/health-safety">
-            Back to Inspections
+          <Link href="/admin/inspections/weekly-medication-audit">
+            Back to Audits
           </Link>
         </Button>
         <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-          <Link href={`/admin/inspections/health-safety/${params.id}/edit`}>
-            Edit Inspection
+          <Link href={`/admin/inspections/weekly-medication-audit/${params.id}/edit`}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Audit
           </Link>
         </Button>
       </div>

@@ -1,3 +1,95 @@
+// "use client"
+
+// import React, { useState } from "react"
+// import { useRouter } from "next/navigation"
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Label } from "@/components/ui/label"
+// import { Input } from "@/components/ui/input"
+// import { Button } from "@/components/ui/button"
+// import { useAuth } from "@/context/auth-context"
+// import { toast } from "sonner"
+// import { Loader2, Mail, Lock } from "lucide-react"
+
+// export default function LoginPage() {
+//   const [email, setEmail] = useState("")
+//   const [password, setPassword] = useState("")
+//   const [loading, setLoading] = useState(false)
+//   const { login } = useAuth()
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault()
+//     setLoading(true)
+//     try {
+//       await login({ email, password })
+//     } catch (error: any) {
+//       toast.error(
+//         <div className="flex flex-col">
+//           <span className="font-semibold">Login Failed</span>
+//           <span>{error.message || "Invalid email or password."}</span>
+//         </div>
+//       )
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   return (
+//     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+//       <Card className="w-full max-w-md">
+//         <CardHeader className="text-center">
+//           <CardTitle className="text-2xl font-bold text-green-600">Unique Care Limited</CardTitle>
+//           <CardDescription>Sign in to your account</CardDescription>
+//         </CardHeader>
+//         <CardContent>
+//           <form onSubmit={handleSubmit} className="space-y-4">
+//             <div className="space-y-2">
+//               <Label htmlFor="email">Email</Label>
+//               <div className="relative">
+//                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+//                 <Input
+//                   id="email"
+//                   type="email"
+//                   placeholder="email@example.com"
+//                   required
+//                   value={email}
+//                   onChange={(e) => setEmail(e.target.value)}
+//                   className="pl-10"
+//                 />
+//               </div>
+//             </div>
+
+//             <div className="space-y-2">
+//               <Label htmlFor="password">Password</Label>
+//               <div className="relative">
+//                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+//                 <Input
+//                   id="password"
+//                   type="password"
+//                   required
+//                   value={password}
+//                   onChange={(e) => setPassword(e.target.value)}
+//                   className="pl-10"
+//                 />
+//               </div>
+//             </div>
+
+//             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+//               {loading ? (
+//                 <>
+//                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                   Signing In...
+//                 </>
+//               ) : (
+//                 "Sign In"
+//               )}
+//             </Button>
+//           </form>
+//         </CardContent>
+//       </Card>
+//     </div>
+//   )
+// }
+
 "use client"
 
 import React, { useState } from "react"
@@ -15,12 +107,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
       await login({ email, password })
+      
+      // Fallback redirect in case the auth context redirect fails
+      setTimeout(() => {
+        const storedUser = localStorage.getItem("auth_user")
+        if (storedUser && window.location.pathname === "/login") {
+          try {
+            const user = JSON.parse(storedUser)
+            const routes = {
+              admin: "/admin/dashboard",
+              inspector: "/inspector/dashboard", 
+              team_leader: "/team-leader/dashboard",
+              worker: "/worker/dashboard",
+              client: "/client/dashboard",
+            }
+            const route = routes[user.role as keyof typeof routes] || "/login"
+            router.push(route)
+          } catch {
+            toast.error("Login successful but redirect failed. Please refresh the page.")
+          }
+        }
+      }, 2000) // Wait 2 seconds before checking
+      
     } catch (error: any) {
       toast.error(
         <div className="flex flex-col">

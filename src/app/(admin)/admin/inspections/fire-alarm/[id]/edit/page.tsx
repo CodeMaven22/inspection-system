@@ -406,6 +406,412 @@
 //   )
 // }
 
+// "use client"
+
+// import { useState, useEffect } from "react"
+// import { useRouter, useParams } from "next/navigation"
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card"
+// import Link from "next/link"
+// import {
+//   Loader2,
+//   ArrowLeft,
+//   Save,
+// } from "lucide-react"
+// import { Button } from "@/components/ui/button"
+// import { Input } from "@/components/ui/input"
+// import { Textarea } from "@/components/ui/textarea"
+// import { Label } from "@/components/ui/label"
+// import { Checkbox } from "@/components/ui/checkbox"
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select"
+// import { useAuth } from "@/context/auth-context"
+// import { toast } from "sonner"
+// import axios from "axios"
+
+// interface FireAlarmInspectionDetail {
+//   id: number
+//   inspection: {
+//     id: number
+//     inspection_type: string
+//     location: string
+//     client_name: string
+//     status: string
+//     created_by: number
+//     created_by_name: string
+//     submitted_by_role: string
+//     inspection_conducted_by: number | null
+//     inspection_comments: string | null
+//     inspection_date: string | null
+//     approved_by: number | null
+//     approved_by_name: string | null
+//     approval_comments: string | null
+//     approval_date: string | null
+//     created_at: string
+//   }
+//   point_checked: string | null
+//   alarm_functional: boolean | null
+//   call_points_accessible: boolean | null
+//   emergency_lights_working: boolean | null
+//   faults_identified_details: string | null
+//   action_taken_details: string | null
+//   management_book_initials: string | null
+//   comments: string | null
+//   is_active: boolean
+//   created_at: string
+//   updated_at: string
+// }
+
+// export default function EditFireAlarmInspectionPage() {
+//   const router = useRouter()
+//   const params = useParams()
+//   const { tokens, user } = useAuth()
+//   const [loading, setLoading] = useState(true)
+//   const [saving, setSaving] = useState(false)
+//   const [inspection, setInspection] = useState<FireAlarmInspectionDetail | null>(null)
+
+//   const [formData, setFormData] = useState({
+//     location: "",
+//     client_name: "",
+//     point_checked: "",
+//     alarm_functional: false,
+//     call_points_accessible: false,
+//     emergency_lights_working: false,
+//     faults_identified_details: "",
+//     action_taken_details: "",
+//     management_book_initials: "",
+//     comments: "",
+//     inspection_date: "",
+//   })
+
+//   useEffect(() => {
+//     const fetchInspection = async () => {
+//       if (!tokens) return
+      
+//       try {
+//         const res = await axios.get(
+//           `http://127.0.0.1:8000/api/inspections/fire-alarm/${params.id}/`,
+//           {
+//             headers: { Authorization: `Bearer ${tokens.access}` },
+//           }
+//         )
+//         setInspection(res.data)
+        
+//         // Set form data
+//         setFormData({
+//           location: res.data.inspection.location || "",
+//           client_name: res.data.inspection.client_name || "",
+//           point_checked: res.data.point_checked || "",
+//           alarm_functional: res.data.alarm_functional || false,
+//           call_points_accessible: res.data.call_points_accessible || false,
+//           emergency_lights_working: res.data.emergency_lights_working || false,
+//           faults_identified_details: res.data.faults_identified_details || "",
+//           action_taken_details: res.data.action_taken_details || "",
+//           management_book_initials: res.data.management_book_initials || "",
+//           comments: res.data.comments || "",
+//           inspection_date: res.data.inspection.inspection_date 
+//             ? res.data.inspection.inspection_date.split('T')[0] // Format date for input
+//             : new Date().toISOString().split('T')[0],
+//         })
+//       } catch (err) {
+//         console.error("Failed to fetch inspection details:", err)
+//         toast.error("Failed to load inspection details")
+//       } finally {
+//         setLoading(false)
+//       }
+//     }
+
+//     fetchInspection()
+//   }, [params.id, tokens])
+
+//   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+//     const { name, value } = e.target
+//     setFormData(prev => ({ ...prev, [name]: value }))
+//   }
+
+//   const handleCheckboxChange = (name: string, checked: boolean) => {
+//     setFormData(prev => ({ ...prev, [name]: checked }))
+//   }
+
+//   const handleSelectChange = (name: string, value: string) => {
+//     setFormData(prev => ({ ...prev, [name]: value }))
+//   }
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault()
+//     if (!tokens || !inspection) return
+
+//     setSaving(true)
+//     try {
+//       // Prepare data for API
+//       const updateData = {
+//         location: formData.location,
+//         client_name: formData.client_name,
+//         point_checked: formData.point_checked,
+//         alarm_functional: formData.alarm_functional,
+//         call_points_accessible: formData.call_points_accessible,
+//         emergency_lights_working: formData.emergency_lights_working,
+//         faults_identified_details: formData.faults_identified_details,
+//         action_taken_details: formData.action_taken_details,
+//         management_book_initials: formData.management_book_initials,
+//         comments: formData.comments,
+//         inspection_date: formData.inspection_date,
+//       }
+
+//       await axios.patch(
+//         `http://127.0.0.1:8000/api/inspections/fire-alarm/${params.id}/`,
+//         updateData,
+//         {
+//           headers: { Authorization: `Bearer ${tokens.access}` },
+//         }
+//       )
+
+//       toast.success("Inspection updated successfully")
+//       router.push(`/admin/inspections/fire-alarm/${params.id}/details`)
+//     } catch (err) {
+//       console.error("Failed to update inspection:", err)
+//       toast.error("Failed to update inspection")
+//     } finally {
+//       setSaving(false)
+//     }
+//   }
+
+//   if (loading) {
+//     return (
+//       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
+//         <div className="flex flex-col items-center gap-4">
+//           <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+//           <p className="text-muted-foreground">Loading inspection details...</p>
+//         </div>
+//       </div>
+//     )
+//   }
+
+//   if (!inspection) {
+//     return (
+//       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
+//         <div className="text-center">
+//           <h2 className="text-2xl font-bold text-emerald-700 mb-2">Inspection Not Found</h2>
+//           <p className="text-muted-foreground mb-4">The requested inspection could not be found.</p>
+//           <Button asChild>
+//             <Link href="/inspections/fire-alarm">
+//               <ArrowLeft className="mr-2 h-4 w-4" />
+//               Back to Inspections
+//             </Link>
+//           </Button>
+//         </div>
+//       </div>
+//     )
+//   }
+
+//   return (
+//     <div className="flex flex-col gap-6 p-4 md:p-6">
+//       <div className="flex items-center gap-4">
+//         <Button asChild variant="outline" size="icon">
+//           <Link href={`/inspections/fire-alarm/${params.id}/details`}>
+//             <ArrowLeft className="h-4 w-4" />
+//           </Link>
+//         </Button>
+//         <div>
+//           <h1 className="text-2xl md:text-3xl font-bold text-emerald-700">Edit Fire Alarm Inspection</h1>
+//           <p className="text-muted-foreground">Inspection ID: #{inspection.id}</p>
+//         </div>
+//       </div>
+
+//       <form onSubmit={handleSubmit}>
+//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+//           {/* Basic Information */}
+//           <Card className="lg:col-span-1">
+//             <CardHeader>
+//               <CardTitle className="text-emerald-700">Basic Information</CardTitle>
+//             </CardHeader>
+//             <CardContent className="space-y-4">
+//               <div className="space-y-2">
+//                 <Label htmlFor="location">Location *</Label>
+//                 <Input
+//                   id="location"
+//                   name="location"
+//                   value={formData.location}
+//                   onChange={handleInputChange}
+//                   required
+//                   placeholder="Enter location"
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="client_name">Client Name *</Label>
+//                 <Input
+//                   id="client_name"
+//                   name="client_name"
+//                   value={formData.client_name}
+//                   onChange={handleInputChange}
+//                   required
+//                   placeholder="Enter client name"
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="inspection_date">Inspection Date *</Label>
+//                 <Input
+//                   id="inspection_date"
+//                   name="inspection_date"
+//                   type="date"
+//                   value={formData.inspection_date}
+//                   onChange={handleInputChange}
+//                   required
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="point_checked">Point Checked</Label>
+//                 <Input
+//                   id="point_checked"
+//                   name="point_checked"
+//                   value={formData.point_checked}
+//                   onChange={handleInputChange}
+//                   placeholder="Enter point checked"
+//                 />
+//               </div>
+//             </CardContent>
+//           </Card>
+
+//           {/* Test Results */}
+//           <Card className="lg:col-span-2">
+//             <CardHeader>
+//               <CardTitle className="text-emerald-700">Test Results</CardTitle>
+//               <CardDescription>Select the tests that were performed successfully</CardDescription>
+//             </CardHeader>
+//             <CardContent className="space-y-4">
+//               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+//                 <div className="flex items-center space-x-2">
+//                   <Checkbox
+//                     id="alarm_functional"
+//                     checked={formData.alarm_functional}
+//                     onCheckedChange={(checked) => 
+//                       handleCheckboxChange("alarm_functional", checked as boolean)
+//                     }
+//                   />
+//                   <Label htmlFor="alarm_functional" className="cursor-pointer">
+//                     Alarm Functional
+//                   </Label>
+//                 </div>
+
+//                 <div className="flex items-center space-x-2">
+//                   <Checkbox
+//                     id="call_points_accessible"
+//                     checked={formData.call_points_accessible}
+//                     onCheckedChange={(checked) => 
+//                       handleCheckboxChange("call_points_accessible", checked as boolean)
+//                     }
+//                   />
+//                   <Label htmlFor="call_points_accessible" className="cursor-pointer">
+//                     Call Points Accessible
+//                   </Label>
+//                 </div>
+
+//                 <div className="flex items-center space-x-2">
+//                   <Checkbox
+//                     id="emergency_lights_working"
+//                     checked={formData.emergency_lights_working}
+//                     onCheckedChange={(checked) => 
+//                       handleCheckboxChange("emergency_lights_working", checked as boolean)
+//                     }
+//                   />
+//                   <Label htmlFor="emergency_lights_working" className="cursor-pointer">
+//                     Emergency Lights Working
+//                   </Label>
+//                 </div>
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="faults_identified_details">Faults Identified</Label>
+//                 <Textarea
+//                   id="faults_identified_details"
+//                   name="faults_identified_details"
+//                   value={formData.faults_identified_details}
+//                   onChange={handleInputChange}
+//                   placeholder="Describe any faults identified..."
+//                   rows={3}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="action_taken_details">Action Taken</Label>
+//                 <Textarea
+//                   id="action_taken_details"
+//                   name="action_taken_details"
+//                   value={formData.action_taken_details}
+//                   onChange={handleInputChange}
+//                   placeholder="Describe actions taken to address faults..."
+//                   rows={3}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="management_book_initials">Management Book Initials</Label>
+//                 <Input
+//                   id="management_book_initials"
+//                   name="management_book_initials"
+//                   value={formData.management_book_initials}
+//                   onChange={handleInputChange}
+//                   placeholder="Enter initials"
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="comments">Additional Comments</Label>
+//                 <Textarea
+//                   id="comments"
+//                   name="comments"
+//                   value={formData.comments}
+//                   onChange={handleInputChange}
+//                   placeholder="Any additional comments..."
+//                   rows={3}
+//                 />
+//               </div>
+//             </CardContent>
+//           </Card>
+//         </div>
+
+//         <div className="flex justify-end gap-4 mt-6">
+//           <Button
+//             type="button"
+//             variant="outline"
+//             onClick={() => router.push(`/inspections/fire-alarm/${params.id}/details`)}
+//             disabled={saving}
+//           >
+//             Cancel
+//           </Button>
+//           <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+//             {saving ? (
+//               <>
+//                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+//                 Saving...
+//               </>
+//             ) : (
+//               <>
+//                 <Save className="mr-2 h-4 w-4" />
+//                 Save Changes
+//               </>
+//             )}
+//           </Button>
+//         </div>
+//       </form>
+//     </div>
+//   )
+// }
+
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -422,6 +828,7 @@ import {
   Loader2,
   ArrowLeft,
   Save,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -436,8 +843,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuth } from "@/context/auth-context"
+import { useRoleGuard } from "@/hooks/useRoleGuard"
 import { toast } from "sonner"
-import axios from "axios"
+import api from "@/lib/api-client"
 
 interface FireAlarmInspectionDetail {
   id: number
@@ -473,11 +881,14 @@ interface FireAlarmInspectionDetail {
 }
 
 export default function EditFireAlarmInspectionPage() {
+  useRoleGuard(["admin", "team_leader", "inspector"])
+  
   const router = useRouter()
   const params = useParams()
-  const { tokens, user } = useAuth()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [inspection, setInspection] = useState<FireAlarmInspectionDetail | null>(null)
 
   const [formData, setFormData] = useState({
@@ -496,15 +907,11 @@ export default function EditFireAlarmInspectionPage() {
 
   useEffect(() => {
     const fetchInspection = async () => {
-      if (!tokens) return
-      
       try {
-        const res = await axios.get(
-          `http://127.0.0.1:8000/api/inspections/fire-alarm/${params.id}/`,
-          {
-            headers: { Authorization: `Bearer ${tokens.access}` },
-          }
-        )
+        setLoading(true)
+        setError(null)
+        
+        const res = await api.get(`/inspections/fire-alarm/${params.id}/`)
         setInspection(res.data)
         
         // Set form data
@@ -523,16 +930,20 @@ export default function EditFireAlarmInspectionPage() {
             ? res.data.inspection.inspection_date.split('T')[0] // Format date for input
             : new Date().toISOString().split('T')[0],
         })
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch inspection details:", err)
-        toast.error("Failed to load inspection details")
+        const errorMessage = err.response?.data?.detail || 
+                           err.response?.data?.message || 
+                           "Failed to load inspection details. Please try again."
+        setError(errorMessage)
+        toast.error(errorMessage)
       } finally {
         setLoading(false)
       }
     }
 
     fetchInspection()
-  }, [params.id, tokens])
+  }, [params.id])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -547,43 +958,49 @@ export default function EditFireAlarmInspectionPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!tokens || !inspection) return
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!inspection) return
 
-    setSaving(true)
-    try {
-      // Prepare data for API
-      const updateData = {
-        location: formData.location,
-        client_name: formData.client_name,
-        point_checked: formData.point_checked,
-        alarm_functional: formData.alarm_functional,
-        call_points_accessible: formData.call_points_accessible,
-        emergency_lights_working: formData.emergency_lights_working,
-        faults_identified_details: formData.faults_identified_details,
-        action_taken_details: formData.action_taken_details,
-        management_book_initials: formData.management_book_initials,
-        comments: formData.comments,
-        inspection_date: formData.inspection_date,
-      }
-
-      await axios.patch(
-        `http://127.0.0.1:8000/api/inspections/fire-alarm/${params.id}/`,
-        updateData,
-        {
-          headers: { Authorization: `Bearer ${tokens.access}` },
-        }
-      )
-
-      toast.success("Inspection updated successfully")
-      router.push(`/admin/inspections/fire-alarm/${params.id}/details`)
-    } catch (err) {
-      console.error("Failed to update inspection:", err)
-      toast.error("Failed to update inspection")
-    } finally {
-      setSaving(false)
+  setSaving(true)
+  try {
+    // Prepare data for API - CORRECTED STRUCTURE
+    // Your backend expects these fields at the root level
+    const updateData = {
+      location: formData.location,
+      client_name: formData.client_name,
+      point_checked: formData.point_checked,
+      alarm_functional: formData.alarm_functional,
+      call_points_accessible: formData.call_points_accessible,
+      emergency_lights_working: formData.emergency_lights_working,
+      faults_identified_details: formData.faults_identified_details,
+      action_taken_details: formData.action_taken_details,
+      management_book_initials: formData.management_book_initials,
+      comments: formData.comments,
+      // inspection_date: formData.inspection_date, 
     }
+
+    await api.patch(`/inspections/fire-alarm/${params.id}/`, updateData)
+
+    toast.success("Inspection updated successfully")
+    router.push(`/admin/inspections/fire-alarm/${params.id}/details`)
+  } catch (err: any) {
+    console.error("Failed to update inspection:", err)
+    // Log the full error response for debugging
+    console.log("Error response:", err.response)
+    
+    const errorMessage = err.response?.data?.detail || 
+                       err.response?.data?.message || 
+                       "Failed to update inspection. Please try again."
+    toast.error(errorMessage)
+  } finally {
+    setSaving(false)
+  }
+}
+
+  const retryFetch = () => {
+    setError(null)
+    setLoading(true)
   }
 
   if (loading) {
@@ -597,14 +1014,39 @@ export default function EditFireAlarmInspectionPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Inspection</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={retryFetch} variant="default">
+              <Loader2 className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/inspections/fire-alarm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Inspections
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!inspection) {
     return (
       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-emerald-700 mb-2">Inspection Not Found</h2>
           <p className="text-muted-foreground mb-4">The requested inspection could not be found.</p>
           <Button asChild>
-            <Link href="/inspections/fire-alarm">
+            <Link href="/admin/inspections/fire-alarm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Inspections
             </Link>
@@ -618,7 +1060,7 @@ export default function EditFireAlarmInspectionPage() {
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="outline" size="icon">
-          <Link href={`/inspections/fire-alarm/${params.id}/details`}>
+          <Link href={`/admin/inspections/fire-alarm/${params.id}/details`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -787,7 +1229,7 @@ export default function EditFireAlarmInspectionPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push(`/inspections/fire-alarm/${params.id}/details`)}
+            onClick={() => router.push(`/admin/inspections/fire-alarm/${params.id}/details`)}
             disabled={saving}
           >
             Cancel

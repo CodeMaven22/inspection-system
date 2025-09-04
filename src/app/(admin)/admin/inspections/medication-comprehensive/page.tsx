@@ -12,7 +12,7 @@ import {
 import {
   Table,
   TableBody,
- TableCell,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -48,6 +48,7 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  Pill,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -60,7 +61,7 @@ import {
 import { useAuth } from "@/context/auth-context"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api-client" // Use the centralized API client
+import api from "@/lib/api-client"
 import { Pie, Bar } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -84,7 +85,7 @@ ChartJS.register(
   Legend
 )
 
-interface FireAlarmInspection {
+interface MedicationComprehensiveInspection {
   id: string
   type: string
   status: string
@@ -98,10 +99,10 @@ interface FireAlarmInspection {
 
 type InspectionStatus = "pending" | "approved" | "rejected" | "completed"
 
-export default function FireAlarmInspectionsPage() {
+export default function MedicationComprehensiveInspectionsPage() {
   useRoleGuard(["admin", "team_leader", "inspector"])
 
-  const [inspections, setInspections] = useState<FireAlarmInspection[]>([])
+  const [inspections, setInspections] = useState<MedicationComprehensiveInspection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<InspectionStatus | "all">("all")
@@ -121,26 +122,47 @@ export default function FireAlarmInspectionsPage() {
         setLoading(true)
         setError(null)
         
-        const response = await api.get("inspections/fire-alarm/")
+        const response = await api.get("inspections/medication-comprehensive/")
         
-        const mapped = response.data.map((item: any) => ({
-          id: item.id.toString(),
-          type: "fire_alarm",
-          status: item.inspection.status,
-          created_by: item.inspection.created_by_name || item.inspection.created_by.toString(),
-          created_at: item.inspection.inspection_date || item.inspection.created_at,
-          data: {
-            client_name: item.inspection.client_name,
-            location: item.inspection.location,
+        // Check if response.data is an array or if it contains a results property
+        let inspectionsData = response.data;
+        
+        // Handle different API response structures
+        if (Array.isArray(response.data)) {
+          inspectionsData = response.data;
+        } else if (response.data.results && Array.isArray(response.data.results)) {
+          inspectionsData = response.data.results;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          inspectionsData = response.data.data;
+        } else {
+          console.error("Unexpected API response structure:", response.data);
+          throw new Error("Unexpected API response format");
+        }
+        
+        const mapped = inspectionsData.map((item: any) => {
+          // Handle different response structures
+          const inspectionData = item.inspection || item;
+          
+          return {
+            id: item.id?.toString() || inspectionData.id?.toString(),
+            type: "medication_comprehensive",
+            status: inspectionData.status,
+            created_by: inspectionData.created_by_name || inspectionData.created_by?.toString() || "Unknown",
+            created_at: inspectionData.inspection_date || inspectionData.created_at,
+            data: {
+              client_name: inspectionData.client_name,
+              location: inspectionData.location,
+            }
           }
-        }))
+        })
         
         setInspections(mapped)
       } catch (err: any) {
-        console.error("Failed to fetch inspections:", err)
+        console.error("Failed to fetch medication comprehensive inspections:", err)
         const errorMessage = err.response?.data?.detail || 
                            err.response?.data?.message || 
-                           "Failed to load inspections. Please try again."
+                           err.message ||
+                           "Failed to load medication comprehensive inspections. Please try again."
         setError(errorMessage)
         toast.error(errorMessage)
       } finally {
@@ -151,14 +173,13 @@ export default function FireAlarmInspectionsPage() {
     fetchInspections()
   }, [])
 
+  const filteredInspections = inspections.filter((inspection) => {
+    const matchesStatus = filterStatus === "all" || inspection.status === filterStatus
+    const matchesClient = !filterClient || inspection.data.client_name?.toLowerCase().includes(filterClient.toLowerCase())
+    const matchesLocation = !filterLocation || inspection.data.location?.toLowerCase().includes(filterLocation.toLowerCase())
+    const matchesCreatedBy = !filterCreatedBy || inspection.created_by.toLowerCase().includes(filterCreatedBy.toLowerCase())
 
-   const filteredInspections = inspections.filter((inspection) => {
-  const matchesStatus = filterStatus === "all" || inspection.status === filterStatus
-  const matchesClient = !filterClient || inspection.data.client_name?.toLowerCase().includes(filterClient.toLowerCase())
-  const matchesLocation = !filterLocation || inspection.data.location?.toLowerCase().includes(filterLocation.toLowerCase())
-  const matchesCreatedBy = !filterCreatedBy || inspection.created_by.toLowerCase().includes(filterCreatedBy.toLowerCase())
-
-  return matchesStatus && matchesClient && matchesLocation && matchesCreatedBy
+    return matchesStatus && matchesClient && matchesLocation && matchesCreatedBy
   })
 
   // Pagination logic
@@ -180,7 +201,7 @@ export default function FireAlarmInspectionsPage() {
           inspections.filter(i => i.status === 'rejected').length,
           inspections.filter(i => i.status === 'completed').length,
         ],
-        backgroundColor: ['#fbbf24', '#059669', '#ef4444', '#6b7280'],
+        backgroundColor: ['#fbbf24', '#16a34a', '#ef4444', '#6b7280'],
         borderWidth: 0,
       },
     ],
@@ -199,7 +220,7 @@ export default function FireAlarmInspectionsPage() {
       {
         label: 'Inspections Conducted',
         data: Object.values(inspectionsByCreator),
-        backgroundColor: '#059669',
+        backgroundColor: '#3b82f6',
         borderRadius: 4,
       },
     ],
@@ -235,8 +256,7 @@ export default function FireAlarmInspectionsPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      // Use the centralized api client - authentication is handled automatically
-      await api.patch(`inspections/fire-alarm/${id}/`, {
+      await api.patch(`inspections/medication-comprehensive/${id}/`, {
         status: "approved",
         approved_by: user?.id
       })
@@ -253,18 +273,16 @@ export default function FireAlarmInspectionsPage() {
             : insp
         )
       )
-      toast.success(`Fire alarm inspection ${id} approved`)
+      toast.success(`Medication comprehensive inspection ${id} approved`)
     } catch (err: any) {
       console.error("Failed to approve inspection:", err)
-      // Error handling is now centralized in the API client
       toast.error("Failed to approve inspection")
     }
   }
 
   const handleReject = async (id: string) => {
     try {
-      // Use the centralized api client
-      await api.patch(`inspections/fire-alarm/${id}/`, {
+      await api.patch(`inspections/medication-comprehensive/${id}/`, {
         status: "rejected",
         approved_by: user?.id
       })
@@ -281,7 +299,7 @@ export default function FireAlarmInspectionsPage() {
             : insp
         )
       )
-      toast.error(`Fire alarm inspection ${id} rejected`)
+      toast.error(`Medication comprehensive inspection ${id} rejected`)
     } catch (err: any) {
       console.error("Failed to reject inspection:", err)
       toast.error("Failed to reject inspection")
@@ -290,11 +308,10 @@ export default function FireAlarmInspectionsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      // Use the centralized api client
-      await api.delete(`inspections/fire-alarm/${id}/`)
+      await api.delete(`inspections/medication-comprehensive/${id}/`)
 
       setInspections((prev) => prev.filter((insp) => insp.id !== id))
-      toast.success(`Fire alarm inspection ${id} deleted`)
+      toast.success(`Medication comprehensive inspection ${id} deleted`)
     } catch (err: any) {
       console.error("Failed to delete inspection:", err)
       toast.error("Failed to delete inspection")
@@ -328,7 +345,7 @@ export default function FireAlarmInspectionsPage() {
   const handleExport = () => {
     const dataStr = JSON.stringify(filteredInspections, null, 2)
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-    const exportFileDefaultName = 'fire-alarm-inspections.json'
+    const exportFileDefaultName = 'medication-comprehensive-inspections.json'
     
     const linkElement = document.createElement('a')
     linkElement.setAttribute('href', dataUri)
@@ -341,15 +358,14 @@ export default function FireAlarmInspectionsPage() {
   const retryFetch = () => {
     setError(null)
     setLoading(true)
-    // The useEffect will trigger again
   }
 
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
-          <p className="text-muted-foreground">Loading fire alarm inspections...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <p className="text-muted-foreground">Loading medication comprehensive inspections...</p>
         </div>
       </div>
     )
@@ -363,7 +379,7 @@ export default function FireAlarmInspectionsPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Inspections</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="flex gap-3 justify-center">
-            <Button onClick={retryFetch} variant="default">
+            <Button onClick={retryFetch} variant="default" className="bg-blue-600 hover:bg-blue-700">
               <RefreshCw className="h-4 w-4 mr-2" />
               Try Again
             </Button>
@@ -380,18 +396,18 @@ export default function FireAlarmInspectionsPage() {
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-emerald-700">Fire Alarm Inspections</h1>
-          <p className="text-muted-foreground">Manage and review all fire alarm inspections</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-800">Medication Comprehensive Audits</h1>
+          <p className="text-muted-foreground">Manage and review all medication comprehensive inspections</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-            <Link href="/admin/inspections/fire-alarm/new">
+          <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Link href="/admin/inspections/medication-comprehensive/new">
               <PlusCircle className="mr-2 h-4 w-4" />
-              New Fire Alarm Inspection
+              New Medication Audit
             </Link>
           </Button>
         </div>
@@ -399,9 +415,9 @@ export default function FireAlarmInspectionsPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-emerald-100">
+        <Card className="border-blue-100">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2 text-emerald-700">
+            <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
               <PieChart className="h-5 w-5" />
               Inspection Status Overview
             </CardTitle>
@@ -413,9 +429,9 @@ export default function FireAlarmInspectionsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-100">
+        <Card className="border-blue-100">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2 text-emerald-700">
+            <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
               <BarChart3 className="h-5 w-5" />
               Inspections by Creator
             </CardTitle>
@@ -428,16 +444,16 @@ export default function FireAlarmInspectionsPage() {
         </Card>
       </div>
 
-      <Card className="border-emerald-100">
+      <Card className="border-blue-100">
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <CardTitle className="text-emerald-700">Fire Alarm Inspection List</CardTitle>
-              <CardDescription>View and manage fire alarm inspections with advanced filters</CardDescription>
+              <CardTitle className="text-blue-800">Medication Comprehensive Audit List</CardTitle>
+              <CardDescription>View and manage medication comprehensive audits with advanced filters</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {filteredInspections.length} inspection{filteredInspections.length !== 1 ? 's' : ''} found
+                {filteredInspections.length} audit{filteredInspections.length !== 1 ? 's' : ''} found
               </span>
               <Button 
                 variant="ghost" 
@@ -459,7 +475,7 @@ export default function FireAlarmInspectionsPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search inspections..."
+                  placeholder="Search audits..."
                   className="pl-9"
                   value={filterClient}
                   onChange={(e) => setFilterClient(e.target.value)}
@@ -467,20 +483,20 @@ export default function FireAlarmInspectionsPage() {
               </div>
               
               <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as InspectionStatus | "all")}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <div className="flex items-center gap-2">
-                    <BadgeCheck className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Filter by status" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+  <SelectTrigger className="w-full md:w-[180px]">
+    <div className="flex items-center gap-2">
+      <BadgeCheck className="h-4 w-4 text-muted-foreground" />
+      <SelectValue placeholder="Filter by status" />
+    </div>
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Statuses</SelectItem>
+    <SelectItem value="pending">Pending</SelectItem>
+    <SelectItem value="approved">Approved</SelectItem>
+    <SelectItem value="rejected">Rejected</SelectItem>
+    <SelectItem value="completed">Completed</SelectItem>
+  </SelectContent>
+</Select>
               
               <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" />
@@ -529,9 +545,9 @@ export default function FireAlarmInspectionsPage() {
           </div>
 
           {/* Table */}
-          <div className="rounded-md border border-emerald-100 overflow-hidden">
+          <div className="rounded-md border border-blue-100 overflow-hidden">
             <Table>
-              <TableHeader className="bg-emerald-50 text-emerald-800">
+              <TableHeader className="bg-blue-50 text-blue-800">
                 <TableRow>
                   <TableHead className="font-semibold">ID</TableHead>
                   <TableHead className="font-semibold">Client Name</TableHead>
@@ -545,7 +561,7 @@ export default function FireAlarmInspectionsPage() {
               <TableBody>
                 {currentItems.length > 0 ? (
                   currentItems.map((inspection) => (
-                    <TableRow key={inspection.id} className="hover:bg-emerald-50/30 transition-colors">
+                    <TableRow key={inspection.id} className="hover:bg-blue-50/30 transition-colors">
                       <TableCell className="font-medium">#{inspection.id}</TableCell>
                       <TableCell>{inspection.data.client_name || "N/A"}</TableCell>
                       <TableCell>{inspection.data.location || "N/A"}</TableCell>
@@ -571,7 +587,7 @@ export default function FireAlarmInspectionsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/inspections/fire-alarm/${inspection.id}/details`} className="flex items-center gap-2 cursor-pointer">
+                              <Link href={`/admin/inspections/medication-comprehensive/${inspection.id}/details`} className="flex items-center gap-2 cursor-pointer">
                                 <Eye className="h-4 w-4" />
                                 View Details
                               </Link>
@@ -596,7 +612,7 @@ export default function FireAlarmInspectionsPage() {
                                 </>
                               )}
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/inspections/fire-alarm/${inspection.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                              <Link href={`/admin/inspections/medication-comprehensive/${inspection.id}/edit`} className="flex items-center gap-2 cursor-pointer">
                                 <Edit className="h-4 w-4" />
                                 Edit
                               </Link>
@@ -617,8 +633,8 @@ export default function FireAlarmInspectionsPage() {
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
-                        <Filter className="h-8 w-8" />
-                        <p>No fire alarm inspections found.</p>
+                        <Pill className="h-8 w-8" />
+                        <p>No medication comprehensive audits found.</p>
                         <Button variant="outline" onClick={clearFilters} className="mt-2">
                           Clear filters
                         </Button>
@@ -633,7 +649,7 @@ export default function FireAlarmInspectionsPage() {
             {filteredInspections.length > itemsPerPage && (
               <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
                 <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  <span>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredInspections.length)} of {filteredInspections.length} inspections</span>
+                  <span>Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredInspections.length)} of {filteredInspections.length} audits</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
@@ -652,7 +668,7 @@ export default function FireAlarmInspectionsPage() {
                         variant={currentPage === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => paginate(page)}
-                        className={`h-8 w-8 p-0 ${currentPage === page ? 'bg-emerald-600' : ''}`}
+                        className={`h-8 w-8 p-0 ${currentPage === page ? 'bg-blue-600' : ''}`}
                       >
                         {page}
                       </Button>
@@ -676,4 +692,3 @@ export default function FireAlarmInspectionsPage() {
     </div>
   )
 }
-
